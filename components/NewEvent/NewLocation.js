@@ -8,16 +8,15 @@ const { Option } = Select;
 
 export default function NewLocationModal({
   visible,
-  onOk,
   onCancel,
   newLocationSubmit,
+  data,
 }) {
   return (
     <>
       <Modal
         // title="New Location"
         visible={visible}
-        onOk={onOk}
         onCancel={onCancel}
         footer={null}
         preserve={false}
@@ -26,10 +25,19 @@ export default function NewLocationModal({
         <Form
           requiredMark={true}
           layout="vertical"
-          name="newLocation"
+          // name="newLocation"
           onFinish={newLocationSubmit}
+          initialValues={{
+            name: data?.name,
+            street: data?.street,
+            city: data?.city,
+            state: data?.state,
+            zip: data?.zip,
+          }}
         >
-          <p className="text-2xl font-bold">New Location</p>
+          <p className="text-2xl font-bold">
+            {data?.id ? "Edit " : "New "}Location
+          </p>
 
           <div className="w-full mt-5">
             <Form.Item

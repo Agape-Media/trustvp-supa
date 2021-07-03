@@ -4,27 +4,35 @@ import Link from "next/link";
 import { supabase } from "../utils/supabaseClient";
 import { Empty, Table } from "antd";
 import { TrustButton } from "../components/pageUtils";
-import Auth from "../components/Auth";
+
 import { catchErrors } from "../utils/helper";
 import moment from "moment";
 import _ from "lodash";
+import { useRouter } from "next/router";
 
 export default function RSVP() {
+  const router = useRouter();
+
   const [events, setEvents] = useState(null);
-  const [locations, setLocations] = useState(null);
 
   useEffect(() => {
-    const fetchLocations = async () => {
+    const fetchEvents = async () => {
       const user = supabase.auth.user();
 
       let { data, error, status } = await supabase
-        .from("locations")
-        .select()
+        .from("events")
+        .select(
+          `
+        *,
+        locations:location (name)
+       `
+        )
         .eq("user_id", user.id);
-      setLocations(data);
+      setEvents(data);
+      console.log(data);
     };
 
-    catchErrors(fetchLocations());
+    catchErrors(fetchEvents());
   }, []);
 
   const columns = [
@@ -36,9 +44,9 @@ export default function RSVP() {
     },
     {
       title: "Location",
-      dataIndex: "location",
-      key: "name",
-      render: (text) => <a>{_.find(locations, { id: text })?.name}</a>,
+      dataIndex: "locations",
+      key: "location",
+      render: (text) => <a>{text.name}</a>,
     },
     {
       title: "Date",
@@ -46,8 +54,8 @@ export default function RSVP() {
       key: "dateRange",
       render: (dateRange) => (
         <div>
-          {JSON.parse(dateRange).map((date, i) => (
-            <a>
+          {dateRange.map((date, i) => (
+            <a key={i}>
               {i === 1 ? " - " : null}
               {moment(date).format("MM/DD/YYYY")}
             </a>
@@ -63,22 +71,6 @@ export default function RSVP() {
       render: (text) => <a>{text}</a>,
     },
   ];
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      const user = supabase.auth.user();
-
-      let { data, error, status } = await supabase
-        .from("events")
-        .select()
-        .eq("user_id", user.id);
-      setEvents(data);
-      console.log(data);
-    };
-
-    catchErrors(fetchEvents());
-  }, []);
-
   return (
     <Layout>
       <>
@@ -87,6 +79,11 @@ export default function RSVP() {
         </Link>
         {events?.length ? (
           <Table
+            onRow={(record, rowIndex) => {
+              return {
+                onClick: () => router.push(`/eventInfo?id=${record.id}`),
+              };
+            }}
             className="mt-12"
             bordered
             columns={columns}

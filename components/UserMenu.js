@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Transition from "../utils/Transition";
+import { supabase } from "../utils/supabaseClient";
 // import UserAvatar from "../../images/user-avatar-32.png";
 
 function UserMenu() {

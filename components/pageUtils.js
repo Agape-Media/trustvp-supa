@@ -1,9 +1,12 @@
 import React, { forwardRef } from "react";
+import { Spin } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
 
 export const TrustButton = forwardRef(
-  ({ onClick, href, label, buttonClass }, ref) => {
+  ({ onClick, href, label, buttonClass, disabled }, ref) => {
     return (
       <button
+        disabled={disabled}
         href={href}
         onClick={onClick}
         ref={ref}
@@ -14,5 +17,7 @@ export const TrustButton = forwardRef(
     );
   }
 );
+
+const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
 
 export const Card = ({ children }) => <div>{children}</div>;
