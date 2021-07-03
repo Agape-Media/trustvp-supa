@@ -8,8 +8,25 @@
     "start": "next start"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^1.17.0",
+    "antd": "^4.16.1",
+    "axios": "^0.21.1",
+    "babel-plugin-superjson-next": "^0.3.0",
+    "dates-between": "^1.1.0",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1",
+    "moment-range": "^4.0.2",
     "next": "11.0.1",
     "react": "17.0.2",
-    "react-dom": "17.0.2"
+    "react-dom": "17.0.2",
+    "react-transition-group": "^4.4.2",
+    "superjson": "^1.7.4",
+    "swr": "^0.5.5",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.2.6",
+    "postcss": "^8.3.0",
+    "tailwindcss": "^2.1.4"
   }
 }
