@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { TrustButton } from "../pageUtils";
-
 import _ from "lodash";
-
 import moment from "moment";
-
 import { supabase } from "../../utils/supabaseClient";
-import { catchErrors } from "../../utils/helper";
 import { useRouter } from "next/router";
 
 export default function Review({ newEventForm, locations }) {
   const router = useRouter();
+
+  const [showTimeSlots, setShowTimeSlots] = useState(false);
+
+  useEffect(() => {
+    console.log(newEventForm);
+  }, []);
 
   const Slot = ({ startTime, endTime, occupants, price }) => (
     <div className=" h-16 bg-trustBlue text-white flex flex-col items-center justify-center font-bold px-4">
@@ -25,19 +27,21 @@ export default function Review({ newEventForm, locations }) {
 
   const SlotContainer = ({ date }) => (
     <>
-      <div className="w-full">
-        <p className="text-base font-bold">{date}</p>
-        <div className="flex flex-wrap gap-x-4 gap-y-2 max-w-lg">
-          {newEventForm.dateTimeObj[date].map((timeSlot, i) => (
-            <Slot
-              occupants={timeSlot.occupants}
-              price={timeSlot.price}
-              startTime={timeSlot.startTime}
-              endTime={timeSlot.endTime}
-            />
-          ))}
+      {newEventForm.dateTimeObj[date].length ? (
+        <div className="w-full">
+          <p className="text-base font-bold">{date}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 max-w-lg">
+            {newEventForm.dateTimeObj[date].map((timeSlot, i) => (
+              <Slot
+                occupants={timeSlot.occupants}
+                price={timeSlot.price}
+                startTime={timeSlot.startTime}
+                endTime={timeSlot.endTime}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </>
   );
 
@@ -54,14 +58,13 @@ export default function Review({ newEventForm, locations }) {
     { label: "Event Slots", value: newEventForm.dateTimeObj },
   ];
 
-  const [showTimeSlots, setShowTimeSlots] = useState(false);
+  async function submitEvent() {
+    try {
+      const slotsFlat = _.flatMap(newEventForm.dateTimeObj);
 
-  const submitEvent = () => {
-    const user = supabase.auth.user();
+      const user = supabase.auth.user();
 
-    const eventData = async () => {
-      console.log(newEventForm);
-      const { data, error } = await supabase.from("events").insert([
+      let { data, error } = await supabase.from("events").insert([
         {
           user_id: user.id,
           name: newEventForm.name,
@@ -75,11 +78,21 @@ export default function Review({ newEventForm, locations }) {
           dateRange: newEventForm.eventRange,
         },
       ]);
-      router.push("/rsvp");
-    };
 
-    catchErrors(eventData());
-  };
+      let SlotData = await supabase.from("slots").insert(slotsFlat);
+
+      if ((error || SlotData.error) && status !== 406) {
+        throw error || SlotData.error;
+      }
+      if (data && SlotData.data) {
+        // console.log("success");
+        router.push("/rsvp");
+      }
+    } catch (error) {
+      alert(error.message);
+    } finally {
+    }
+  }
 
   return (
     <>

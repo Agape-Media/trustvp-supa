@@ -2,19 +2,24 @@ import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
 import Auth from "../components/Auth";
 import Dashboard from "../components/Dashboard";
+import { Skeleton } from "antd";
 
 export default function Home() {
   const [session, setSession] = useState(null);
-
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    setSession(supabase.auth.session());
+    try {
+      setLoading(true);
+      setSession(supabase.auth.session());
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+      });
+    } catch (error) {}
+    setLoading(false);
   }, []);
 
-  return (
+  return !loading ? (
     <div>
       {!session ? (
         <Auth />
@@ -22,5 +27,7 @@ export default function Home() {
         <Dashboard key={session.user.id} session={session} />
       )}
     </div>
+  ) : (
+    <Skeleton />
   );
 }

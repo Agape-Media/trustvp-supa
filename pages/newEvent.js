@@ -1,4 +1,4 @@
-import Layout from "../components/layout";
+import Layout from "../components/AuthLayout";
 import React, { useState, useEffect } from "react";
 import { Steps, Button, message, BackTop } from "antd";
 import Information from "../components/NewEvent/Information";

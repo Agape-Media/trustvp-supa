@@ -102,12 +102,12 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
           <h3 className="text-xs uppercase text-gray-500 font-semibold pl-3">
             Pages
           </h3>
-          <ul className="mt-3">
+          <ul className="mt-3 space-y-6">
             {navItems.map((item, index) => (
               <li
                 key={index}
-                className={`px-3 py-2 rounded-sm mb-0.5 last:mb-0 cursor-pointer ${
-                  router.asPath === item.link && "bg-gray-900"
+                className={`px-3 rounded-sm mb-0.5 last:mb-0 cursor-pointer border-l-4 border-transparent ${
+                  router.asPath === item.link && "border-white"
                 }`}
               >
                 <Link
@@ -117,7 +117,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen }) {
                     router.asPath === item.link && "hover:text-gray-200"
                   }`}
                 >
-                  <div className="flex flex-grow text-white">
+                  <div className="flex flex-grow items-center space-x-1 text-white">
                     {item.icon}
                     <span className="text-sm font-medium">{item.label}</span>
                   </div>

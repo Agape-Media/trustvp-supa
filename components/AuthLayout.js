@@ -3,7 +3,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import Sidebar from "./Sidebar";
 import { supabase } from "../utils/supabaseClient";
-import Auth from "../components/Auth";
+import Auth from "./Auth";
 
 export default function Layout({ children }) {
   const [session, setSession] = useState(null);
@@ -17,21 +17,17 @@ export default function Layout({ children }) {
       {!session ? (
         <Auth />
       ) : (
-        <div className="flex h-screen overflow-hidden">
+        <div className="lg:flex">
           <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-          <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+          <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-            <main>
-              <div className="px-4 sm:px-6 lg:px-8 py-4 lg:py-16 w-full max-w-9xl mx-auto">
-                {children}
-              </div>
-            </main>
+          <main className="flex flex-col px-4 sm:px-6 lg:px-8 py-4 lg:py-16 w-full max-w-9xl mx-auto">
+            {children}
             <Footer />
-          </div>
+          </main>
         </div>
-      )}{" "}
+      )}
     </>
   );
 }

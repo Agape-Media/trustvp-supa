@@ -18,6 +18,7 @@ import {
   BackTop,
 } from "antd";
 import _ from "lodash";
+import { v4 as uuidv4 } from "uuid";
 
 import { TrustButton } from "../pageUtils";
 import datesBetween from "dates-between";
@@ -36,28 +37,14 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
   const [condition, setCondition] = useState(false);
 
   useEffect(() => {
-    if (!_.isEmpty(newEventForm)) {
-      const dateRanges = [];
-      const eventInfo = newEventForm;
-      for (const date of datesBetween(
-        eventInfo.eventRange[0]._d,
-        eventInfo.eventRange[1]._d
-      )) {
-        dateRanges.push(moment(date).format("MM/DD/YYYY"));
-      }
-      const filteredDates = _.filter(
-        dateRanges.map((date, i) => {
-          if (!_.includes(eventInfo.datesRemoved, date)) {
-            return date;
-          }
-          return null;
-        }),
-        (someDate) => {
-          return someDate != null;
-        }
-      );
-
-      setDatesFiltered(filteredDates);
+    console.log(newEventForm);
+    if (
+      !_.isEmpty(newEventForm) &&
+      (_.isUndefined(newEventForm?.dateTimeObj) ||
+        _.isNil(newEventForm?.dateTimeObj) ||
+        _.isEmpty(newEventForm?.dateTimeObj))
+    ) {
+      const filteredDates = getDatesFilterd(newEventForm);
 
       const newDateTimeObj = {};
       filteredDates.map((date, i) => {
@@ -65,8 +52,39 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
       });
 
       setDateTimeObj(newDateTimeObj);
+    } else if (
+      !_.isEmpty(newEventForm) &&
+      !_.isEmpty(newEventForm?.dateTimeObj)
+    ) {
+      getDatesFilterd(newEventForm);
+      setDateTimeObj(newEventForm?.dateTimeObj);
     }
   }, [newEventForm]);
+
+  const getDatesFilterd = (data) => {
+    const dateRanges = [];
+    const eventInfo = data;
+    for (const date of datesBetween(
+      eventInfo.eventRange[0]._d,
+      eventInfo.eventRange[1]._d
+    )) {
+      dateRanges.push(moment(date).format("MM/DD/YYYY"));
+    }
+    const filteredDates = _.filter(
+      dateRanges.map((date, i) => {
+        if (!_.includes(eventInfo.datesRemoved, date)) {
+          return date;
+        }
+        return null;
+      }),
+      (someDate) => {
+        return someDate != null;
+      }
+    );
+
+    setDatesFiltered(filteredDates);
+    return filteredDates;
+  };
 
   const [optionInfoForm] = Form.useForm();
 
@@ -125,7 +143,7 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
     const objToPush = {
       startTime: startTime,
       endTime: endTime,
-      uuid: "",
+
       occupants: occupants,
       price: price,
     };
@@ -140,10 +158,23 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
         });
 
         condition
-          ? dateTimeObjSpread[date].push(objToPush)
-          : checkOverlap === false && dateTimeObjSpread[date].push(objToPush);
+          ? dateTimeObjSpread[date].push({
+              ...objToPush,
+              date: date,
+              id: uuidv4(),
+            })
+          : checkOverlap === false &&
+            dateTimeObjSpread[date].push({
+              ...objToPush,
+              date: date,
+              id: uuidv4(),
+            });
       } else {
-        dateTimeObjSpread[date].push(objToPush);
+        dateTimeObjSpread[date].push({
+          ...objToPush,
+          date: date,
+          id: uuidv4(),
+        });
       }
     });
 
@@ -151,9 +182,15 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
   };
 
   const next = () => {
-    goToNext({
-      dateTimeObj: dateTimeObj,
-    });
+    if (_.every(dateTimeObj, _.isEmpty)) {
+      notification["warning"]({
+        message: "Please add at least one time slot for your event.",
+      });
+    } else {
+      goToNext({
+        dateTimeObj: dateTimeObj,
+      });
+    }
   };
 
   const changeCondition = (value) => {

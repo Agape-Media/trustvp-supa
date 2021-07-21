@@ -1,5 +1,5 @@
 import React from "react";
-import Layout from "../components/layout";
+import Layout from "../components/AuthLayout";
 import { Tabs } from "antd";
 import AccountSettings from "../components/Settings/AccountSettings";
 import RSVPSettings from "../components/Settings/RSVPSettings";

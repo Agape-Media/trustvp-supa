@@ -18,6 +18,8 @@ import { TrustButton } from "../pageUtils";
 import _ from "lodash";
 import { catchErrors } from "../../utils/helper";
 import NewLocationModal from "../NewEvent/NewLocation";
+import DeleteLocationsModal from "./DeleteLocationsModal";
+import Link from "next/link";
 
 export default function RSVPSettings() {
   //   const [optionInfoForm] = Form.useForm();
@@ -26,27 +28,41 @@ export default function RSVPSettings() {
 
   const [locations, setLocations] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
 
   useEffect(() => {
     const fetchLocations = async () => {
-      const user = supabase.auth.user();
+      try {
+        setLoading(true);
+        const user = supabase.auth.user();
 
-      let { data, error, status } = await supabase
-        .from("locations")
-        .select()
-        .eq("user_id", user.id);
-      const newLocations = data.map((item, i) => {
-        return {
-          ...item,
-          key: i,
-        };
-      });
-      setLocations(newLocations);
+        let { data, error, status } = await supabase
+          .from("locations")
+          .select()
+          .eq("user_id", user.id);
+
+        if (error && status !== 406) {
+          throw error;
+        }
+
+        if (data) {
+          const newLocations = data.map((item, i) => {
+            return {
+              ...item,
+              key: i,
+            };
+          });
+          setLocations(newLocations);
+        }
+      } catch (error) {
+        alert(error.message);
+      }
+
       setLoading(false);
     };
 
-    catchErrors(fetchLocations());
+    fetchLocations();
   }, []);
 
   const columns = [
@@ -54,52 +70,55 @@ export default function RSVPSettings() {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      render: (text) => <a>{text}</a>,
+      render: (text) => <span>{text}</span>,
     },
     {
       title: "Street",
       dataIndex: "street",
       key: "street",
-      render: (text) => <a>{text}</a>,
+      render: (text) => <span>{text}</span>,
     },
     {
       title: "City",
       dataIndex: "city",
       key: "city",
-      render: (text) => <a>{text}</a>,
+      render: (text) => <span>{text}</span>,
     },
     {
       title: "State",
       dataIndex: "state",
       key: "state",
-      render: (text) => <a>{text}</a>,
+      render: (text) => <span>{text}</span>,
     },
     {
       title: "Zip",
       dataIndex: "zip",
       key: "zip",
-      render: (text) => <a>{text}</a>,
+      render: (text) => <span>{text}</span>,
     },
     {
       title: "Action",
       key: "action",
       render: (text, record) => (
-        <a
+        <span
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            deleteLocation(record);
+            setSelectedLocation(record);
+            setDeleteModalVisible(true);
+            // deleteLocation(record);
           }}
           className="text-red-600"
         >
           Delete
-        </a>
+        </span>
       ),
     },
   ];
 
   const handleCancel = () => {
     setIsModalVisible(false);
+    setDeleteModalVisible(false);
     setSelectedLocation(null);
   };
 
@@ -140,50 +159,19 @@ export default function RSVPSettings() {
     catchErrors(newLoc(upsertData));
   };
 
-  // //   async function updateProfile({ username, website, avatar_url }) {
-  // async function updateProfile(values) {
-  //   try {
-  //     setLoading(true);
-  //     const user = supabase.auth.user();
-
-  //     const updates = {
-  //       id: user.id,
-  //       username: values.username,
-  //       website: values.website,
-  //       avatar_url: values.avatar,
-  //       updated_at: new Date(),
-  //     };
-
-  //     let { error } = await supabase.from("profiles").upsert(updates, {
-  //       returning: "minimal", // Don't return the value after inserting
-  //     });
-
-  //     if (error) {
-  //       throw error;
-  //     }
-  //   } catch (error) {
-  //     alert(error.message);
-  //   } finally {
-  //     setFormData({
-  //       ...formData,
-  //       ...values,
-  //     });
-  //     setLoading(false);
-  //   }
-  // }
-
   async function deleteLocation(record) {
+    setDeleteModalVisible(false);
     try {
       const user = supabase.auth.user();
 
       let { error, data } = await supabase.from("locations").delete().match({
         user_id: user.id,
-        id: record.id,
+        id: record,
       });
       if (data) {
         const locationsSpread = [...locations];
         const removedLocationIndex = _.findIndex(locationsSpread, {
-          id: record.id,
+          id: record,
         });
 
         locationsSpread.splice(removedLocationIndex, 1);
@@ -203,6 +191,8 @@ export default function RSVPSettings() {
         description:
           "Make sure location is not associated with an active event",
       });
+    } finally {
+      setSelectedLocation(null);
     }
   }
 
@@ -224,9 +214,17 @@ export default function RSVPSettings() {
             newLocationSubmit={newLocationSubmit}
             data={selectedLocation}
           />
+          <DeleteLocationsModal
+            visible={isDeleteModalVisible}
+            onCancel={handleCancel}
+            deleteLocation={deleteLocation}
+            data={selectedLocation}
+            selectedLocation={selectedLocation}
+          />
           <div className="mt-12">
             {locations?.length ? (
               <Table
+                rowClassName="cursor-pointer"
                 onRow={(record, rowIndex) => {
                   return {
                     onClick: () => {
@@ -256,53 +254,6 @@ export default function RSVPSettings() {
               />
             )}
           </div>
-          {/* <Form
-            requiredMark={false}
-            layout="vertical"
-            name="basicInformation"
-            initialValues={{
-              username: formData.username,
-              email: session.user.email,
-              website: formData.website,
-            }}
-            onFinish={updateProfile}
-            // form={optionInfoForm}
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-              <div className="col-span-1">
-                <Form.Item
-                  label="Name"
-                  name="username"
-                  rules={[
-                    { required: true, message: "Please enter your name." },
-                  ]}
-                >
-                  <Input defaultValue={username} />
-                </Form.Item>
-              </div>
-
-              <div className="col-span-1">
-                <Form.Item label="Email" name="email">
-                  <Input disabled />
-                </Form.Item>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-              <div className="col-span-1">
-                <Form.Item label="Website" name="website">
-                  <Input />
-                </Form.Item>
-              </div>
-            </div>
-            <Form.Item>
-              <TrustButton
-                htmlType="submit"
-                label="Update"
-                buttonClass="bg-trustBlue mx-auto w-80 h-12 mt-12"
-              />
-            </Form.Item>
-          </Form> */}
         </>
       ) : (
         <Skeleton active />

@@ -6,11 +6,18 @@ import { TrustButton } from "../pageUtils";
 import datesBetween from "dates-between";
 import Moment from "moment";
 import { extendMoment } from "moment-range";
+import { v4 as uuidv4 } from "uuid";
 
 const moment = extendMoment(Moment);
 
 const AutoNewEvent = ({ newEventForm, goToNext }) => {
   const [dateTimeObj, setDateTimeObj] = useState({});
+  const [autoInfo, setAutoInfo] = useState({
+    increment: null,
+    timeBetweenSlots: null,
+    startTime: null,
+    endTime: null,
+  });
 
   const [optionInfoForm] = Form.useForm();
 
@@ -29,7 +36,11 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
         <p className="text-base font-bold">{date}</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 ">
           {dateTimeObj[date].map((timeSlot, i) => (
-            <Slot startTime={timeSlot.startTime} endTime={timeSlot.endTime} />
+            <Slot
+              key={i}
+              startTime={timeSlot.startTime}
+              endTime={timeSlot.endTime}
+            />
           ))}
         </div>
       </div>
@@ -43,6 +54,13 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
     const endTime = values.timeRange[1]._d;
     const datesRemoved = newEventForm.datesRemoved;
 
+    setAutoInfo({
+      increment: increment,
+      price: values.price,
+      occupants: values.occupants,
+      timeBetweenSlots: timeBetweenSlots,
+      timeRange: values.timeRange,
+    });
     // ----------------------------------------------------------------
 
     const newStartTime = moment(startTime, "HH:mm");
@@ -52,18 +70,15 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
       times.push({
         startTime: newStartTime.format("HH:mm"),
         endTime: moment(newStartTime).add(increment, "m").format("HH:mm"),
-        uuid: "",
         occupants: values.occupants,
         price: values.price,
       });
       newStartTime.add(increment + timeBetweenSlots, "m").format("HH:mm");
-      console.log(newStartTime.format("HH:mm"));
     }
     // Remove last slot if outside range
     if (times[times.length - 1].endTime > moment(endTime).format("HH:mm")) {
       times.splice(-1, 1);
     }
-    // console.log(times);
 
     // ----------------------------------------------------------------
 
@@ -92,7 +107,14 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
     const dateTime = {};
 
     filteredDates.map((date, i) => {
-      dateTime[date] = times;
+      const timesWithDate = times.map((time, i) => {
+        return {
+          ...time,
+          date: date,
+          id: uuidv4(),
+        };
+      });
+      dateTime[date] = timesWithDate;
     });
 
     setDateTimeObj(dateTime);
@@ -101,6 +123,7 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
   const next = () => {
     goToNext({
       dateTimeObj: dateTimeObj,
+      autoInfo: autoInfo,
     });
   };
 
@@ -113,15 +136,13 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
         requiredMark={false}
         layout="vertical"
         name="AutoNewEvent"
-        // initialValues={{
-        //   name: newEventForm.name,
-        //   location: newEventForm.location,
-        //   timeZone: newEventForm.timeZone,
-        //   description: newEventForm.description,
-        //   eventRange: newEventForm.eventRange,
-        //   slotType: newEventForm.slotType,
-        //   datesRemoved: newEventForm.datesRemoved,
-        // }}
+        initialValues={{
+          timeRange: newEventForm?.autoInfo?.timeRange,
+          occupants: newEventForm?.autoInfo?.occupants,
+          increment: newEventForm?.autoInfo?.increment,
+          timeBetweenSlots: newEventForm?.autoInfo?.timeBetweenSlots,
+          price: newEventForm?.autoInfo?.price,
+        }}
         onFinish={onFinish}
         form={optionInfoForm}
         // onFinishFailed={onFinishFailed}
@@ -190,6 +211,7 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
               rules={[{ required: true, message: "Please enter a price." }]}
             >
               <InputNumber
+                disabled={!_.isEmpty(dateTimeObj)}
                 min={0}
                 // formatter={(value) =>
                 //   `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")

@@ -31,6 +31,9 @@ export default function Information({ goToNext, newEventForm }) {
   const [dateExclusions, setDateExlusions] = useState([]);
 
   useEffect(() => {
+    newEventForm?.dateExclusions
+      ? setDateExlusions(_.compact(newEventForm.dateExclusions))
+      : [];
     const fetchLocations = async () => {
       const user = supabase.auth.user();
 
@@ -45,6 +48,7 @@ export default function Information({ goToNext, newEventForm }) {
   }, []);
 
   const onFinish = (values) => {
+    values.dateExclusions = dateExclusions;
     console.log("Success:", values);
     goToNext(values);
   };
@@ -54,10 +58,7 @@ export default function Information({ goToNext, newEventForm }) {
   };
 
   function onChangeDateRange(value, dateString) {
-    if (value) {
-      const startDate = new Date(dateString[0]);
-      const endDate = new Date(dateString[1]);
-
+    if (dateString) {
       const exclusionsArray = [];
 
       for (const date of datesBetween(value[0]._d, value[1]._d)) {
@@ -68,7 +69,7 @@ export default function Information({ goToNext, newEventForm }) {
       fields["datesRemoved"] = "";
       optionInfoForm.setFieldsValue(fields);
 
-      setDateExlusions(exclusionsArray);
+      setDateExlusions(_.compact(exclusionsArray));
     } else {
       setDateExlusions([]);
     }
@@ -277,7 +278,7 @@ export default function Information({ goToNext, newEventForm }) {
                   <Option
                     key={i}
                     value={
-                      optionInfoForm.getFieldValue("eventRange") ? date : null
+                      optionInfoForm.getFieldValue("eventRange") ? date : []
                     }
                   >
                     {date}

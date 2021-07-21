@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
-import Layout from "./layout";
+import Layout from "./AuthLayout";
 
 export default function Dashboard({ session }) {
   const [loading, setLoading] = useState(true);

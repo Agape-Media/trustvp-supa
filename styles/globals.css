@@ -2,6 +2,11 @@ body {
   background: rgb(240, 242, 248);
   /* font-family: Helvetica, Arial, Sans-Serif; */
 }
+#__next {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 
 @tailwind base;
 @tailwind components;

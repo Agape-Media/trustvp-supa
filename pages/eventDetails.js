@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../utils/supabaseClient";
-import { baseURL } from "../utils/helper";
 import Layout from "../components/AuthLayout";
 import { TrustButton } from "../components/pageUtils";
 import _ from "lodash";
 import { Divider, Skeleton, Menu, Dropdown, notification } from "antd";
 import moment from "moment";
 import copy from "copy-to-clipboard";
-import TinyURL from "tinyurl";
 
-const EventInfo = () => {
+const EventDetails = () => {
   const router = useRouter();
 
   const [event, setEvent] = useState(null);
@@ -37,7 +35,7 @@ const EventInfo = () => {
 
         if (data) {
           setEvent(data);
-          // console.log(data);
+          console.log(data);
         }
       } catch (error) {
         alert(error.message);
@@ -50,10 +48,16 @@ const EventInfo = () => {
 
   const menu = (
     <Menu>
-      <Menu.Item key="0" onClick={() => copyEventURL()}>
-        Copy Link
+      <Menu.Item>
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => copyEventURL()}
+        >
+          Copy Link
+        </a>
       </Menu.Item>
-      <Menu.Item key="1">
+      <Menu.Item>
         <a
           target="_blank"
           rel="noopener noreferrer"
@@ -62,7 +66,7 @@ const EventInfo = () => {
           Share on Facebook
         </a>
       </Menu.Item>
-      <Menu.Item key="2">
+      <Menu.Item>
         <a
           target="_blank"
           rel="noopener noreferrer"
@@ -74,19 +78,11 @@ const EventInfo = () => {
     </Menu>
   );
 
-  const copyEventURL = async () => {
-    try {
-      const url = `${baseURL}/rsvp/reserve?id=${event?.id}`;
-      const coolURL = await TinyURL.shorten(url);
-      copy(coolURL);
-      notification["success"]({
-        message: "Event url coppied to clipboard",
-      });
-    } catch (error) {
-      notification["error"]({
-        message: "Uh-oh something went wrong",
-      });
-    }
+  const copyEventURL = () => {
+    copy(event?.linkURL);
+    notification["success"]({
+      message: "Event url coppied to clipboard",
+    });
   };
   return (
     <Layout>
@@ -106,6 +102,7 @@ const EventInfo = () => {
             <p className="text-gray-600 text-sm">
               Time Zone: {event?.timeZone}
             </p>
+            <Divider />
           </div>
           <div className="flex items-center justify-between space-x-4">
             <Dropdown
@@ -121,7 +118,6 @@ const EventInfo = () => {
               </a>
             </Dropdown>
             <TrustButton
-              onClick={() => router.push(`/eventDetails?id=${event?.id}`)}
               buttonClass="bg-trustBlue w-full hover:opacity-80 transition duration-300 ease-in-out"
               label="Event Stats"
             />
@@ -134,7 +130,7 @@ const EventInfo = () => {
   );
 };
 
-export default EventInfo;
+export default EventDetails;
 
 export async function getServerSideProps(context) {
   return {
