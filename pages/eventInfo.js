@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../utils/supabaseClient";
 import { baseURL } from "../utils/helper";
-import Layout from "../components/AuthLayout";
+import Layout from "../components/Layout";
 import { TrustButton } from "../components/pageUtils";
 import _ from "lodash";
 import { Divider, Skeleton, Menu, Dropdown, notification } from "antd";

@@ -15,65 +15,24 @@ import { TrustButton } from "../pageUtils";
 import _ from "lodash";
 import { catchErrors } from "../../utils/helper";
 
-export default function AccountSettings() {
-  //   const [optionInfoForm] = Form.useForm();
+export default function AccountSettings({ userData, session }) {
+  const [loading, setLoading] = useState(false);
 
-  const [loading, setLoading] = useState(true);
-
-  const [username, setUsername] = useState(null);
-  const [website, setWebsite] = useState(null);
-  const [avatar_url, setAvatarUrl] = useState(null);
-  const [email, setEmail] = useState(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
 
-  const [formData, setFormData] = useState({
-    username: null,
-    website: null,
-    avatar_url: null,
-  });
-
-  const [session, setSession] = useState(null);
+  const [formData, setFormData] = useState();
+  const [sessionData, setSessionData] = useState(null);
 
   useEffect(() => {
-    const session = supabase.auth.session();
-    setSession(session);
-
-    getProfile();
+    console.log(session);
+    setSessionData(session);
+    setFormData(userData);
   }, []);
-
-  async function getProfile() {
-    try {
-      setLoading(true);
-      const user = supabase.auth.user();
-
-      let { data, error, status } = await supabase
-        .from("profiles")
-        .select(`username, website, avatar_url`)
-        .eq("id", user.id)
-        .single();
-
-      if (error && status !== 406) {
-        throw error;
-      }
-
-      if (data) {
-        setFormData({
-          ...formData,
-          username: data.username,
-          website: data.website,
-          avatar_url: data.avatar_url,
-        });
-      }
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   //   async function updateProfile({ username, website, avatar_url }) {
   async function updateProfile(values) {
     try {
+      setLoading(true);
       setButtonDisabled(true);
       const user = supabase.auth.user();
 
@@ -107,22 +66,23 @@ export default function AccountSettings() {
         ...formData,
         ...values,
       });
+      setLoading(false);
       setButtonDisabled(false);
     }
   }
 
   return (
     <>
-      {!loading ? (
+      {formData?.id && !loading ? (
         <>
           <Form
             requiredMark={false}
             layout="vertical"
             name="basicInformation"
             initialValues={{
-              username: formData.username,
-              email: session.user.email,
-              website: formData.website,
+              username: formData?.username,
+              email: sessionData?.user.email,
+              website: formData?.website,
             }}
             onFinish={updateProfile}
             // form={optionInfoForm}
@@ -136,7 +96,7 @@ export default function AccountSettings() {
                     { required: true, message: "Please enter your name." },
                   ]}
                 >
-                  <Input defaultValue={username} />
+                  <Input />
                 </Form.Item>
               </div>
 

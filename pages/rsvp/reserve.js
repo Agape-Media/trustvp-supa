@@ -62,7 +62,9 @@ export default function Event() {
     <>
       {event?.eventSlots[date].length ? (
         <div className="">
-          <p className="text-base font-bold">{date}</p>
+          <p className="text-base font-bold">
+            {moment(date).format("D MMM, YYYY")}
+          </p>
           <div className="flex flex-wrap gap-x-4 gap-y-2 max-w-lg">
             {event?.eventSlots[date].map((timeSlot, i) => (
               <Slot
@@ -108,8 +110,6 @@ export default function Event() {
     setIsModalVisible(false);
   };
 
-  const getSlotInfoFromServer = async () => {};
-
   return (
     <Layout>
       {event ? (
@@ -122,12 +122,12 @@ export default function Event() {
               <Divider />
               <EventInfo
                 info={`Date Start: ${moment(event?.dateRange[0]).format(
-                  "MM/DD/YYYY"
+                  "D MMM, YYYY"
                 )}`}
               />
               <EventInfo
                 info={`Date End: ${moment(event?.dateRange[1]).format(
-                  "MM/DD/YYYY"
+                  "D MMM, YYYY"
                 )}`}
               />
               <EventInfo info={`Time Zone: ${event?.timeZone}`} />

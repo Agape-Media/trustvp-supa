@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Divider, Skeleton } from "antd";
+import { Modal, Divider, Skeleton, Form, InputNumber, Button } from "antd";
 import { TrustButton } from "../pageUtils";
 import Pin from "../Icons/Pin";
 import Calendar from "../Icons/Calendar";
 import numeral from "numeral";
 import moment from "moment";
+import { useRouter } from "next/router";
 
 export default function SlotInfoModal({
   visible,
@@ -12,12 +13,48 @@ export default function SlotInfoModal({
   activeSlot,
   event,
 }) {
+  const router = useRouter();
+  const [form] = Form.useForm();
+
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [slot, setSlot] = useState(null);
 
   useEffect(() => {
     setSlot(activeSlot);
   }, [activeSlot]);
+
+  const onFinish = (values) => {
+    console.log(values);
+
+    const createCheckoutSession = async () => {
+      var quantity = values.quantity;
+
+      // The account selected in the UI and the one that we'll pass as the
+      // Stripe-Account header on the server side.
+      // var account = document.querySelector("#enabled-accounts-select").value;
+      const account = "acct_1JG8ClR17Mj2hTvI";
+
+      const result = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          quantity,
+          price: slot?.price,
+          account,
+          eventID: "950a356b-86d2-4114-931f-6de91a8a70b1",
+          website: "websitehere",
+        }),
+      });
+
+      const { session } = await result.json();
+      router.push(session.url);
+
+      return { session, account };
+    };
+    createCheckoutSession();
+  };
   return (
     <>
       <Modal
@@ -56,10 +93,33 @@ export default function SlotInfoModal({
               </div>
             </div>
             <Divider />
-            <TrustButton
-              buttonClass="bg-trustBlue w-48 mx-auto hover:opacity-80 transition duration-300 ease-in-out mt-8"
-              label="Buy Now!"
-            />
+
+            <Form
+              name="rsvp-tickets"
+              onFinish={onFinish}
+              preserve={false}
+              requiredMark={false}
+              // action="/api/create-checkout-session"
+              // method="POST"
+            >
+              <Form.Item
+                name="quantity"
+                label="Quantity"
+                rules={[
+                  {
+                    required: true,
+                  },
+                ]}
+              >
+                <InputNumber min={1} max={slot?.occupants} className="w-full" />
+              </Form.Item>
+
+              <TrustButton
+                form={{ type: "primary", htmlType: "submit" }}
+                buttonClass="bg-trustBlue w-48 mx-auto hover:opacity-80 transition duration-300 ease-in-out mt-8"
+                label="Buy Now!"
+              />
+            </Form>
           </>
         ) : (
           <Skeleton active />

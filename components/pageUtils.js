@@ -3,9 +3,10 @@ import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
 
 export const TrustButton = forwardRef(
-  ({ onClick, href, label, buttonClass, disabled }, ref) => {
+  ({ onClick, href, label, buttonClass, disabled, form }, ref) => {
     return (
       <button
+        {...form}
         disabled={disabled}
         href={href}
         onClick={onClick}

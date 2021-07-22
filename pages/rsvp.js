@@ -1,4 +1,4 @@
-import Layout from "../components/AuthLayout";
+import Layout from "../components/Layout";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../utils/supabaseClient";

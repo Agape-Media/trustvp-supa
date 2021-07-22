@@ -1,27 +1,73 @@
-import React from "react";
-import Layout from "../components/AuthLayout";
-import { Tabs } from "antd";
+import React, { useEffect, useState } from "react";
+import Layout from "../components/Layout";
+import { Tabs, Skeleton } from "antd";
 import AccountSettings from "../components/Settings/AccountSettings";
 import RSVPSettings from "../components/Settings/RSVPSettings";
 import PayoutSettings from "../components/Settings/PayoutSettings";
+import _ from "lodash";
+import { supabase } from "../utils/supabaseClient";
 
 const { TabPane } = Tabs;
 
 const Settings = () => {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState({});
+  useEffect(() => {
+    const session = supabase.auth.session();
+    setSession(session);
+    getProfile();
+  }, []);
+
+  async function getProfile() {
+    try {
+      setLoading(true);
+      const user = supabase.auth.user();
+
+      let { data, error, status } = await supabase
+        .from("profiles")
+        .select()
+        .eq("id", user.id)
+        .single();
+
+      if (error && status !== 406) {
+        throw error;
+      }
+
+      if (data) {
+        // console.log(data);
+        setUserData(data);
+      }
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
-    <Layout>
-      <Tabs defaultActiveKey="1" centered>
-        <TabPane tab="RSVP Settings" key="1">
-          <RSVPSettings />
-        </TabPane>
-        <TabPane tab="Manage Payouts" key="2">
-          <PayoutSettings />
-        </TabPane>
-        <TabPane tab="Account" key="3">
-          <AccountSettings />
-        </TabPane>
-      </Tabs>
-    </Layout>
+    <>
+      {!loading ? (
+        <Layout>
+          <Tabs defaultActiveKey="1" centered>
+            <TabPane tab="RSVP Settings" key="1">
+              <RSVPSettings />
+            </TabPane>
+            <TabPane tab="Manage Payouts" key="2">
+              <PayoutSettings
+                setLoading={setLoading}
+                session={session}
+                userData={userData}
+              />
+            </TabPane>
+            <TabPane tab="Account" key="3">
+              <AccountSettings session={session} userData={userData} />
+            </TabPane>
+          </Tabs>
+        </Layout>
+      ) : (
+        <Skeleton active />
+      )}
+    </>
   );
 };
 
