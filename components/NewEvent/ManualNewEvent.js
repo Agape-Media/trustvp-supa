@@ -31,13 +31,18 @@ const moment = extendMoment(Moment);
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-const ManualNewEvent = ({ newEventForm, goToNext }) => {
+const ManualNewEvent = ({
+  newEventForm,
+  goToNext,
+  saveAsDraft,
+  savingDraft,
+}) => {
   const [datesFiltered, setDatesFiltered] = useState([]);
   const [dateTimeObj, setDateTimeObj] = useState({});
   const [condition, setCondition] = useState(false);
 
   useEffect(() => {
-    console.log(newEventForm);
+    // console.log(newEventForm);
     if (
       !_.isEmpty(newEventForm) &&
       (_.isUndefined(newEventForm?.dateTimeObj) ||
@@ -64,6 +69,7 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
   const getDatesFilterd = (data) => {
     const dateRanges = [];
     const eventInfo = data;
+    // console.log(eventInfo);
     for (const date of datesBetween(
       eventInfo.eventRange[0]._d,
       eventInfo.eventRange[1]._d
@@ -143,9 +149,9 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
     const objToPush = {
       startTime: startTime,
       endTime: endTime,
-
       occupants: occupants,
       price: price,
+      available: occupants,
     };
 
     _.forEach(datesSelected, function (date) {
@@ -197,8 +203,11 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
     setCondition(value);
   };
 
-  const confirm = () => {
-    message.success("Next step.");
+  const draft = (data) => {
+    console.log(data);
+    saveAsDraft({
+      dateTimeObj: dateTimeObj,
+    });
   };
 
   return (
@@ -277,11 +286,11 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
             </Form.Item>
           </div>
         </div>
-        <div className="flex justify-center items-center space-x-4">
+        <div className="flex justify-center items-center space-x-4 mt-12">
           <TrustButton
             htmlType="submit"
             label="Add Time Slot"
-            buttonClass="bg-trustBlue w-60 h-12 mt-12"
+            buttonClass="bg-trustBlue w-60 h-12"
           />
           <TrustButton
             htmlType="button"
@@ -290,7 +299,19 @@ const ManualNewEvent = ({ newEventForm, goToNext }) => {
               e.preventDefault();
               next();
             }}
-            buttonClass="bg-trustBlue w-60 h-12 mt-12"
+            buttonClass="bg-trustBlue w-60 h-12"
+          />
+          <TrustButton
+            disabled={savingDraft}
+            onClick={(e) => {
+              e.preventDefault();
+              console.log(
+                _.compact(_.flatMap(optionInfoForm.getFieldsValue())).length
+              );
+              draft(optionInfoForm.getFieldsValue());
+            }}
+            label="Save as Draft"
+            buttonClass="bg-gray-400 hover:bg-gray-500 mx-auto transition duration-300 ease-in-out border w-60 h-12"
           />
         </div>
       </Form>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../utils/supabaseClient";
+import { useRouter } from "next/router";
 import {
   Form,
   Input,
@@ -13,9 +14,15 @@ import {
 } from "antd";
 import { TrustButton } from "../pageUtils";
 import _ from "lodash";
-import { catchErrors } from "../../utils/helper";
 
-export default function AccountSettings({ userData, session }) {
+export default function AccountSettings({
+  userData,
+  session,
+  setLoadingStripe,
+}) {
+  const router = useRouter();
+
+  const [hasStripeAccount, setHasStripeAccount] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const [buttonDisabled, setButtonDisabled] = useState(false);
@@ -27,6 +34,7 @@ export default function AccountSettings({ userData, session }) {
     console.log(session);
     setSessionData(session);
     setFormData(userData);
+    userData?.stripeID ? setHasStripeAccount(true) : setHasStripeAccount(false);
   }, []);
 
   //   async function updateProfile({ username, website, avatar_url }) {
@@ -71,8 +79,35 @@ export default function AccountSettings({ userData, session }) {
     }
   }
 
+  const getLink = async () => {
+    setLoadingStripe(true);
+    const response = await fetch(
+      hasStripeAccount
+        ? `/api/stripeUpdate?accountID=${userData?.stripeID}`
+        : `/api/onboard?email=${sessionData?.user?.email}`
+    );
+    if (!response.ok) {
+      setLoadingStripe(false);
+      const message = `An error has occured ${
+        hasStripeAccount ? "retrieving your account" : "onboarding your account"
+      }. Contact support if error persists`;
+
+      notification["error"]({
+        message: "Error",
+        description: message,
+      });
+      throw new Error(message);
+    }
+    const data = await response.json();
+    router.push(data.url);
+  };
   return (
     <>
+      <div className="mb-6">
+        <a onClick={() => getLink()} className="stripe-connect">
+          <span>Connect with</span>
+        </a>
+      </div>
       {formData?.id && !loading ? (
         <>
           <Form

@@ -64,8 +64,9 @@ export default function Review({ newEventForm, locations }) {
 
       const user = supabase.auth.user();
 
-      let { data, error } = await supabase.from("events").insert([
+      let { data, error } = await supabase.from("events").upsert([
         {
+          id: newEventForm.id,
           user_id: user.id,
           name: newEventForm.name,
           location: newEventForm.location,
@@ -76,11 +77,13 @@ export default function Review({ newEventForm, locations }) {
             : null,
           eventSlots: newEventForm.dateTimeObj,
           dateRange: newEventForm.eventRange,
+          isDraft: false,
         },
       ]);
 
       let SlotData = await supabase.from("slots").insert(slotsFlat);
 
+      // TODO -- IF ERROR DETE EVENT FROM DATABASE OR DELETE SLOTS FROM DATABASE
       if ((error || SlotData.error) && status !== 406) {
         throw error || SlotData.error;
       }

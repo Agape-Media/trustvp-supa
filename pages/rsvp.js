@@ -2,10 +2,21 @@ import Layout from "../components/Layout";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../utils/supabaseClient";
-import { Empty, Table, Skeleton } from "antd";
+import {
+  Empty,
+  Table,
+  Skeleton,
+  Menu,
+  Dropdown,
+  notification,
+  Tabs,
+} from "antd";
 import { TrustButton } from "../components/pageUtils";
+import Published from "../components/RSVP/Published";
+import Drafts from "../components/RSVP/Drafts";
+import DeleteEventModal from "../components/RSVP/DeleteEventModal";
 
-import { catchErrors } from "../utils/helper";
+import { catchErrors, baseURL } from "../utils/helper";
 import moment from "moment";
 import _ from "lodash";
 import { useRouter } from "next/router";
@@ -13,77 +24,82 @@ import { useRouter } from "next/router";
 export default function RSVP() {
   const router = useRouter();
 
-  const [events, setEvents] = useState(null);
+  const [publishedEvents, setPublishedEvents] = useState(null);
+  const [drafts, setDrafts] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   useEffect(() => {
     const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const user = supabase.auth.user();
+      setLoading(true);
 
-        let { data, error, status } = await supabase
-          .from("events")
-          .select(
-            `
+      const user = supabase.auth.user();
+
+      let { data, error, status } = await supabase
+        .from("events")
+        .select(
+          `
         *,
         locations:location (name)
        `
-          )
-          .eq("user_id", user.id);
+        )
+        .eq("user_id", user.id);
 
-        if (error && status !== 406) {
-          throw error;
-        }
+      setPublishedEvents(_.filter(data, { isDraft: !true }));
+      setDrafts(_.filter(data, { isDraft: true }));
 
-        if (data) {
-          setEvents(data);
-        }
-      } catch (error) {
-        alert(error.message);
-      }
       setLoading(false);
     };
 
-    fetchEvents();
+    catchErrors(fetchEvents());
   }, []);
 
-  const columns = [
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      render: (text) => <span>{text}</span>,
-    },
-    {
-      title: "Location",
-      dataIndex: "locations",
-      key: "location",
-      render: (text) => <span>{text.name}</span>,
-    },
-    {
-      title: "Date",
-      dataIndex: "dateRange",
-      key: "dateRange",
-      render: (dateRange) => (
-        <div>
-          {dateRange.map((date, i) => (
-            <span key={i}>
-              {i === 1 ? " - " : null}
-              {moment(date).format("MM/DD/YYYY")}
-            </span>
-          ))}
-        </div>
-      ),
-    },
+  const handleCancel = () => {
+    setDeleteModalVisible(false);
+    setSelectedEvent(null);
+  };
 
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-      render: (text) => <span>{text}</span>,
-    },
-  ];
+  const deleteEvent = async (record) => {
+    console.log(record);
+    setDeleteModalVisible(false);
+
+    try {
+      let { error, data } = await supabase.from("events").delete().match({
+        id: record,
+      });
+      if (data) {
+        const id = data[0].id;
+        const type = _.find(drafts, { id: id }) ? "drafts" : "publishedEvents";
+        const dataSpread =
+          type == "drafts" ? [...drafts] : [...publishedEvents];
+        const removedEventIndex = _.findIndex(dataSpread, {
+          id: id,
+        });
+
+        dataSpread.splice(removedEventIndex, 1);
+
+        type == "drafts"
+          ? setDrafts(dataSpread)
+          : setPublishedEvents(dataSpread);
+        notification["success"]({
+          message: "Location Deleted Successfully",
+        });
+      }
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      // alert(error.message);
+      notification["error"]({
+        message: "Location Was Not Deleted",
+        description:
+          "Make sure location is not associated with an active event",
+      });
+    } finally {
+      setSelectedEvent(null);
+    }
+  };
+
   return (
     <Layout>
       <>
@@ -92,39 +108,41 @@ export default function RSVP() {
             <TrustButton label="Create Event" buttonClass="bg-trustBlue" />
           </Link>
         </div>
-        {!loading ? (
-          events?.length ? (
-            <Table
-              rowKey="id"
-              rowClassName="cursor-pointer"
-              onRow={(record, rowIndex) => {
-                return {
-                  onClick: () => router.push(`/eventInfo?id=${record.id}`),
-                };
-              }}
-              className="mt-12"
-              bordered
-              columns={columns}
-              dataSource={events}
+        {drafts?.length || publishedEvents?.length ? (
+          <>
+            <DeleteEventModal
+              visible={isDeleteModalVisible}
+              onCancel={handleCancel}
+              deleteEvent={deleteEvent}
+              data={selectedEvent}
             />
-          ) : (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              imageStyle={{
-                height: 60,
-              }}
-              description={
-                <span>
-                  You currently have no events.{" "}
-                  <Link href="/newEvent">
-                    <button>Create an event.</button>
-                  </Link>
-                </span>
-              }
+            <Drafts
+              setSelectedEvent={setSelectedEvent}
+              setDeleteModalVisible={setDeleteModalVisible}
+              events={drafts}
             />
-          )
+            <Published
+              setSelectedEvent={setSelectedEvent}
+              selectedEvent={selectedEvent}
+              setDeleteModalVisible={setDeleteModalVisible}
+              events={publishedEvents}
+            />{" "}
+          </>
         ) : (
-          <Skeleton />
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            imageStyle={{
+              height: 60,
+            }}
+            description={
+              <span>
+                You currently have no events.{" "}
+                <Link href="/newEvent">
+                  <button>Create an event.</button>
+                </Link>
+              </span>
+            }
+          />
         )}
       </>
     </Layout>

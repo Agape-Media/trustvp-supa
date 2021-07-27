@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const moment = extendMoment(Moment);
 
-const AutoNewEvent = ({ newEventForm, goToNext }) => {
+const AutoNewEvent = ({ newEventForm, goToNext, saveAsDraft, savingDraft }) => {
   const [dateTimeObj, setDateTimeObj] = useState({});
   const [autoInfo, setAutoInfo] = useState({
     increment: null,
@@ -72,6 +72,7 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
         endTime: moment(newStartTime).add(increment, "m").format("HH:mm"),
         occupants: values.occupants,
         price: values.price,
+        available: values.occupants,
       });
       newStartTime.add(increment + timeBetweenSlots, "m").format("HH:mm");
     }
@@ -124,6 +125,13 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
     goToNext({
       dateTimeObj: dateTimeObj,
       autoInfo: autoInfo,
+    });
+  };
+
+  const draft = (data) => {
+    console.log(data);
+    saveAsDraft({
+      autoInfo: data,
     });
   };
 
@@ -223,13 +231,27 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
         </div>
 
         {_.isEmpty(dateTimeObj) ? (
-          <TrustButton
-            htmlType="submit"
-            label="Create Time Slots"
-            buttonClass="bg-trustBlue mx-auto w-80 h-12 mt-12"
-          />
+          <div className="space-y-2">
+            <TrustButton
+              htmlType="submit"
+              label="Create Time Slots"
+              buttonClass="bg-trustBlue mx-auto w-80 h-12 mt-12"
+            />
+            <TrustButton
+              disabled={savingDraft}
+              onClick={(e) => {
+                e.preventDefault();
+                console.log(
+                  _.compact(_.flatMap(optionInfoForm.getFieldsValue())).length
+                );
+                draft(optionInfoForm.getFieldsValue());
+              }}
+              label="Save as Draft"
+              buttonClass="bg-gray-400 hover:bg-gray-500 mx-auto transition duration-300 ease-in-out border w-80 h-12"
+            />
+          </div>
         ) : (
-          <div className="flex justify-center items-center space-x-4">
+          <div className="flex justify-center items-center space-x-4 mt-12">
             <TrustButton
               htmlType="button"
               label="Review Event"
@@ -237,7 +259,7 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
                 e.preventDefault();
                 next();
               }}
-              buttonClass="bg-trustBlue w-60 h-12 mt-12"
+              buttonClass="bg-trustBlue w-60 h-12"
             />
             <TrustButton
               htmlType="button"
@@ -246,7 +268,19 @@ const AutoNewEvent = ({ newEventForm, goToNext }) => {
                 e.preventDefault();
                 setDateTimeObj({});
               }}
-              buttonClass="bg-red-600 w-60 h-12 mt-12"
+              buttonClass="bg-red-600 w-60 h-12"
+            />
+            <TrustButton
+              disabled={savingDraft}
+              onClick={(e) => {
+                e.preventDefault();
+                console.log(
+                  _.compact(_.flatMap(optionInfoForm.getFieldsValue())).length
+                );
+                draft(optionInfoForm.getFieldsValue());
+              }}
+              label="Save as Draft"
+              buttonClass="bg-gray-400 hover:bg-gray-500 transition duration-300 ease-in-out border w-60 h-12"
             />
           </div>
         )}

@@ -23,7 +23,12 @@ const moment = extendMoment(Moment);
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-export default function Information({ goToNext, newEventForm }) {
+export default function Information({
+  goToNext,
+  newEventForm,
+  saveAsDraft,
+  savingDraft,
+}) {
   const [optionInfoForm] = Form.useForm();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -31,6 +36,7 @@ export default function Information({ goToNext, newEventForm }) {
   const [dateExclusions, setDateExlusions] = useState([]);
 
   useEffect(() => {
+    optionInfoForm.resetFields();
     newEventForm?.dateExclusions
       ? setDateExlusions(_.compact(newEventForm.dateExclusions))
       : [];
@@ -45,11 +51,11 @@ export default function Information({ goToNext, newEventForm }) {
     };
 
     catchErrors(fetchLocations());
-  }, []);
+  }, [newEventForm]);
 
   const onFinish = (values) => {
     values.dateExclusions = dateExclusions;
-    console.log("Success:", values);
+    // console.log("Success:", values);
     goToNext(values);
   };
 
@@ -126,6 +132,11 @@ export default function Information({ goToNext, newEventForm }) {
     return current && current < moment().endOf("day");
   };
 
+  const draft = (data) => {
+    // console.log(data);
+    saveAsDraft(data);
+  };
+
   return (
     <>
       <NewLocationModal
@@ -139,13 +150,13 @@ export default function Information({ goToNext, newEventForm }) {
         layout="vertical"
         name="basicInformation"
         initialValues={{
-          name: newEventForm.name,
-          location: newEventForm.location,
-          timeZone: newEventForm.timeZone,
-          description: newEventForm.description,
-          eventRange: newEventForm.eventRange,
-          slotType: newEventForm.slotType,
-          datesRemoved: newEventForm.datesRemoved,
+          name: newEventForm?.name,
+          location: newEventForm?.location,
+          timeZone: newEventForm?.timeZone,
+          description: newEventForm?.description,
+          eventRange: newEventForm?.eventRange,
+          slotType: newEventForm?.slotType,
+          datesRemoved: newEventForm?.datesRemoved,
         }}
         onFinish={onFinish}
         form={optionInfoForm}
@@ -308,13 +319,27 @@ export default function Information({ goToNext, newEventForm }) {
             </Form.Item>
           </div>
         </div>
-        <Form.Item>
+        <div className="flex justify-end space-x-4 mt-12">
           <TrustButton
-            htmlType="submit"
-            label="Next"
-            buttonClass="bg-trustBlue mx-auto w-80 h-12 mt-12"
+            disabled={savingDraft}
+            onClick={(e) => {
+              e.preventDefault();
+              console.log(
+                _.compact(_.flatMap(optionInfoForm.getFieldsValue())).length
+              );
+              draft(optionInfoForm.getFieldsValue());
+            }}
+            label="Save as Draft"
+            buttonClass="bg-gray-400 hover:bg-gray-500 transition duration-300 ease-in-out border w-40 h-10"
           />
-        </Form.Item>
+          <Form.Item>
+            <TrustButton
+              htmlType="submit"
+              label="Next"
+              buttonClass="bg-trustBlue transition duration-300 ease-in-out w-40 h-10"
+            />
+          </Form.Item>
+        </div>
       </Form>
       <BackTop />
     </>

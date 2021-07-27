@@ -1,7 +1,6 @@
 export default async (req, res) => {
-  const stripe = require("stripe")(
-    "sk_test_51JFhNuJM5OCIlNWKzxjdOkYBEWKKyJKwOxv4Wztk5IRtq6JQaZu6Fmc9jRDwImgGhrRvmp7zRKIIY62Z8tQig19j00TsHgQoCc"
-  );
+  const secret = process.env.NEXT_PUBLIC_STRIPE_SECRET;
+  const stripe = require("stripe")(secret);
   const accounts = await stripe.accounts.list();
   for (const account of accounts.data) {
     if (account.id != "acct_1JG8ClR17Mj2hTvI") {

@@ -3,7 +3,6 @@ import Layout from "../components/Layout";
 import { Tabs, Skeleton } from "antd";
 import AccountSettings from "../components/Settings/AccountSettings";
 import RSVPSettings from "../components/Settings/RSVPSettings";
-import PayoutSettings from "../components/Settings/PayoutSettings";
 import _ from "lodash";
 import { supabase } from "../utils/supabaseClient";
 
@@ -52,15 +51,12 @@ const Settings = () => {
             <TabPane tab="RSVP Settings" key="1">
               <RSVPSettings />
             </TabPane>
-            <TabPane tab="Manage Payouts" key="2">
-              <PayoutSettings
-                setLoading={setLoading}
+            <TabPane tab="Account" key="2">
+              <AccountSettings
+                setLoadingStripe={setLoading}
                 session={session}
                 userData={userData}
               />
-            </TabPane>
-            <TabPane tab="Account" key="3">
-              <AccountSettings session={session} userData={userData} />
             </TabPane>
           </Tabs>
         </Layout>

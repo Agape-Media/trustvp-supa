@@ -45,16 +45,16 @@ export default function Event() {
     fetchEvent();
   }, []);
 
-  const Slot = ({ startTime, endTime, occupants, price, id }) => (
+  const Slot = ({ startTime, endTime, available, id }) => (
     <div
       onClick={() => selectSlot(id)}
-      className=" h-10 bg-trustBlue text-white flex flex-col items-center justify-center font-bold px-3.5 cursor-pointer"
+      className={`${
+        available < 1 ? "opacity-50" : null
+      } h-10 bg-trustBlue text-white flex flex-col items-center justify-center font-bold px-3.5 cursor-pointer`}
     >
       <p className="text-xs">{`${moment(startTime, "HH:mm").format(
         "h:mm a"
       )} - ${moment(endTime, "HH:mm").format("h:mm a")}`}</p>
-      {/* <p className="text-xs"># Occupants: {occupants}</p>
-      <p className="text-xs">Price: ${price}</p> */}
     </div>
   );
 
@@ -70,8 +70,7 @@ export default function Event() {
               <Slot
                 key={i}
                 id={timeSlot.id}
-                occupants={timeSlot.occupants}
-                price={timeSlot.price}
+                available={timeSlot.available}
                 startTime={timeSlot.startTime}
                 endTime={timeSlot.endTime}
               />
