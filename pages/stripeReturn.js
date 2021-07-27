@@ -3,6 +3,7 @@ import { supabase } from "../utils/supabaseClient";
 import { useRouter } from "next/router";
 import { baseURL } from "../utils/helper";
 import { Skeleton } from "antd";
+import { loadStripe } from "@stripe/stripe-js";
 
 export default function stripeReturn() {
   const router = useRouter();
@@ -25,8 +26,8 @@ export default function stripeReturn() {
           throw error;
         }
       } catch (error) {
-        const stripe = require("stripe")(
-          "sk_test_51JFhNuJM5OCIlNWKzxjdOkYBEWKKyJKwOxv4Wztk5IRtq6JQaZu6Fmc9jRDwImgGhrRvmp7zRKIIY62Z8tQig19j00TsHgQoCc"
+        const stripe = loadStripe(
+          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
         );
         const deleted = await stripe.accounts.del(router.query.accountID);
       } finally {
