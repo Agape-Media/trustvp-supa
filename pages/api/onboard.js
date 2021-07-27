@@ -1,10 +1,12 @@
 import { baseURL } from "../../utils/helper";
+import Stripe from "stripe";
 
 export default async (req, res) => {
   const email = req.query.email;
   const secret = process.env.NEXT_PUBLIC_STRIPE_SECRET;
 
-  const stripe = require("stripe")(secret);
+  const stripe = new Stripe(secret);
+  // const stripe = require("stripe")(secret);
   const account = await stripe.accounts.create({
     type: "standard",
     email: email,

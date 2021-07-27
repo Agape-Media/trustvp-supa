@@ -1,7 +1,9 @@
 import { baseURL } from "../../utils/helper";
+import Stripe from "stripe";
 const secret = process.env.NEXT_PUBLIC_STRIPE_SECRET;
 console.log(secret);
-const stripe = require("stripe")(secret);
+const stripe = new Stripe(secret);
+// const stripe = require("stripe")(secret);
 
 export default async (req, res) => {
   if (req.method === "POST") {

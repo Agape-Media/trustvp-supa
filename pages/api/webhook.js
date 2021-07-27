@@ -1,7 +1,9 @@
 import { buffer } from "micro";
+import Stripe from "stripe";
 
 const secret = process.env.NEXT_PUBLIC_STRIPE_SECRET;
-const stripe = require("stripe")(secret);
+const stripe = new Stripe(secret);
+// const stripe = require("stripe")(secret);
 const endpointSecret = "whsec_WddzmWWyFINF2KQihbKgzfqD7sNfoZTn";
 
 const fulfillOrder = (session) => {
