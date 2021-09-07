@@ -1,52 +1,25 @@
-import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { supabase } from "../utils/supabaseClient";
-import { baseURL } from "../utils/helper";
-import Layout from "../components/Layout";
-import { TrustButton } from "../components/pageUtils";
+import { baseURL } from "@/utils/helper";
+import Layout from "@/components/Layout";
+import { TrustButton } from "@/components/pageUtils";
 import _ from "lodash";
 import { Divider, Skeleton, Menu, Dropdown, notification } from "antd";
 import moment from "moment";
 import copy from "copy-to-clipboard";
 import TinyURL from "tinyurl";
+import useSWR from "swr";
+import { fetcher } from "@/utils/helper";
 
 const EventInfo = () => {
   const router = useRouter();
+  const queryKey = "id";
+  const paramToken =
+    router.query[queryKey] ||
+    (router.asPath.match(new RegExp(`[&?]${queryKey}=(.*)(&|$)`))
+      ? router.asPath.match(new RegExp(`[&?]${queryKey}=(.*)(&|$)`))[1]
+      : null);
 
-  const [event, setEvent] = useState(null);
-
-  useEffect(() => {
-    const fetchEvent = async () => {
-      try {
-        const user = supabase.auth.user();
-
-        let { data, error, status } = await supabase
-          .from("events")
-          .select(
-            ` 
-          *,
-        locations:location (name)
-        `
-          )
-          .eq("id", router.query.id)
-          .single();
-
-        if (error && status !== 406) {
-          throw error;
-        }
-
-        if (data) {
-          setEvent(data);
-          // console.log(data);
-        }
-      } catch (error) {
-        alert(error.message);
-      } finally {
-      }
-    };
-
-    fetchEvent();
-  }, []);
+  const { data } = useSWR(`/api/getEvents?key=id&value=${paramToken}`, fetcher);
 
   const menu = (
     <Menu>
@@ -76,7 +49,7 @@ const EventInfo = () => {
 
   const copyEventURL = async () => {
     try {
-      const url = `${baseURL}/rsvp/reserve?id=${event?.id}`;
+      const url = `${baseURL}/rsvp/reserve?id=${data?.id}`;
       const coolURL = await TinyURL.shorten(url);
       copy(coolURL);
       notification["success"]({
@@ -90,22 +63,20 @@ const EventInfo = () => {
   };
   return (
     <Layout>
-      {!_.isEmpty(event) ? (
+      {data?.id ? (
         <div className="border border-gray-100 bg-gray-50 p-6 shadow-xl w-full h-96 rounded-lg flex flex-col max-w-lg mx-auto">
           <div className="flex-1">
-            <p className="text-gray-600 text-base">{event?.locations.name}</p>
-            <p className="text-black text-3xl font-bold">{event?.name}</p>
-            <p className="text-gray-600 text-sm">{event?.description}</p>
+            <p className="text-gray-600 text-base">{data?.locations.name}</p>
+            <p className="text-black text-3xl font-bold">{data?.name}</p>
+            <p className="text-gray-600 text-sm">{data?.description}</p>
             <Divider />
             <p className="text-gray-600 text-sm">
-              Date Start: {moment(event?.dateRange[0]).format("MM/DD/YYYY")}
+              Date Start: {moment(data?.dateRange[0]).format("MM/DD/YYYY")}
             </p>
             <p className="text-gray-600 text-sm">
-              Date End: {moment(event?.dateRange[1]).format("MM/DD/YYYY")}
+              Date End: {moment(data?.dateRange[1]).format("MM/DD/YYYY")}
             </p>
-            <p className="text-gray-600 text-sm">
-              Time Zone: {event?.timeZone}
-            </p>
+            <p className="text-gray-600 text-sm">Time Zone: {data?.timeZone}</p>
           </div>
           <div className="flex items-center justify-between space-x-4">
             <Dropdown
@@ -121,7 +92,7 @@ const EventInfo = () => {
               </a>
             </Dropdown>
             <TrustButton
-              onClick={() => router.push(`/eventDetails?id=${event?.id}`)}
+              onClick={() => router.push(`/eventDetails?id=${data?.id}`)}
               buttonClass="bg-trustBlue w-full hover:opacity-80 transition duration-300 ease-in-out"
               label="Event Stats"
             />
@@ -136,8 +107,10 @@ const EventInfo = () => {
 
 export default EventInfo;
 
-export async function getServerSideProps(context) {
-  return {
-    props: {}, // ONLY TO KEEP QUERY ON REFRESH ----- DO NOT DELETE
-  };
-}
+// ONLY TO KEEP QUERY ON REFRESH ----- DO NOT DELETE
+
+// export async function getServerSideProps(context) {
+//   return {
+//     props: {}, // ONLY TO KEEP QUERY ON REFRESH ----- DO NOT DELETE
+//   };
+// }

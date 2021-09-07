@@ -6,16 +6,14 @@ import {
   DatePicker,
   BackTop,
   notification,
-  InputNumber,
   Divider,
 } from "antd";
 import NewLocationModal from "./NewLocation";
 import { TrustButton } from "../pageUtils";
 import _ from "lodash";
-import { timeZones } from "../../utils/selections";
+import { timeZones } from "@/utils/selections";
 import datesBetween from "dates-between";
-import { supabase } from "../../utils/supabaseClient";
-import { catchErrors } from "../../utils/helper";
+import { supabase } from "@/utils/supabaseClient";
 import Moment from "moment";
 import { extendMoment } from "moment-range";
 
@@ -50,7 +48,9 @@ export default function Information({
       setLocations(data);
     };
 
-    catchErrors(fetchLocations());
+    fetchLocations().catch((err) => {
+      console.log(err);
+    });
   }, [newEventForm]);
 
   const onFinish = (values) => {
@@ -124,7 +124,9 @@ export default function Information({
       });
     };
 
-    catchErrors(newLoc(data));
+    newLoc(data).catch((err) => {
+      console.log(err);
+    });
   };
 
   const disabledDate = (current) => {

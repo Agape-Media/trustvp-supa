@@ -1,12 +1,11 @@
-import Layout from "../components/Layout";
+import Layout from "@/components/Layout";
 import React, { useState, useEffect } from "react";
 import { Steps, Button, message, BackTop, notification } from "antd";
-import Information from "../components/NewEvent/Information";
-import AutoNewEvent from "../components/NewEvent/AutoNewEvent.js";
-import Review from "../components/NewEvent/Review.js";
-import ManualNewEvent from "../components/NewEvent/ManualNewEvent";
-import { supabase } from "../utils/supabaseClient";
-import { catchErrors } from "../utils/helper";
+import Information from "@/components/NewEvent/Information";
+import AutoNewEvent from "@/components/NewEvent/AutoNewEvent.js";
+import Review from "@/components/NewEvent/Review.js";
+import ManualNewEvent from "@/components/NewEvent/ManualNewEvent";
+import { supabase } from "@/utils/supabaseClient";
 import { useRouter } from "next/router";
 import Moment from "moment";
 import { extendMoment } from "moment-range";
@@ -24,47 +23,48 @@ export default function NewEvent() {
 
   useEffect(() => {
     const fetchDraft = async () => {
-      try {
-        let { data, error, status } = await supabase
-          .from("events")
-          .select()
-          .eq("id", router.query.id);
+      //  const { data, error, status } =  await fetch("/api/create-checkout-session")
+      let { data, error, status } = await supabase
+        .from("events")
+        .select()
+        .eq("id", router.query.id);
 
-        if (error && status !== 406) {
-          throw error;
+      if (error && status !== 406) {
+        throw error;
+      }
+      // console.log(data);
+      if (data) {
+        const draftData = data[0].newEventForm;
+
+        if (draftData.eventRange) {
+          draftData.eventRange[0] = moment(draftData.eventRange[0]);
+          draftData.eventRange[1] = moment(draftData.eventRange[1]);
         }
-        // console.log(data);
-        if (data) {
-          const draftData = data[0].newEventForm;
 
-          if (draftData.eventRange) {
-            draftData.eventRange[0] = moment(draftData.eventRange[0]);
-            draftData.eventRange[1] = moment(draftData.eventRange[1]);
-          }
-
-          if (
-            draftData.slotType == "auto" &&
-            draftData?.autoInfo?.timeRange?.length
-          ) {
-            draftData.autoInfo.timeRange[0] = moment(
-              draftData.autoInfo.timeRange[0]
-            );
-            draftData.autoInfo.timeRange[1] = moment(
-              draftData?.autoInfo?.timeRange[1]
-            );
-          }
-
-          setNewEventForm({
-            id: data[0].id,
-            ...draftData,
-          });
-          // console.log(data[0]);
+        if (
+          draftData.slotType == "auto" &&
+          draftData?.autoInfo?.timeRange?.length
+        ) {
+          draftData.autoInfo.timeRange[0] = moment(
+            draftData.autoInfo.timeRange[0]
+          );
+          draftData.autoInfo.timeRange[1] = moment(
+            draftData?.autoInfo?.timeRange[1]
+          );
         }
-      } catch (error) {
-        console.log(error);
+
+        setNewEventForm({
+          id: data[0].id,
+          ...draftData,
+        });
+        // console.log(data[0]);
       }
     };
-    router.query.id ? fetchDraft() : null;
+    router.query.id
+      ? fetchDraft().catch((err) => {
+          console.log(err);
+        })
+      : null;
   }, []);
 
   useEffect(() => {
@@ -77,7 +77,9 @@ export default function NewEvent() {
         .eq("user_id", user.id);
       setLocations(data);
     };
-    catchErrors(fetchLocations());
+    fetchLocations().catch((err) => {
+      console.log(err);
+    });
   }, []);
 
   const goToNext = (data) => {

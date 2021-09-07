@@ -1,7 +1,7 @@
 /* This example requires Tailwind CSS v2.0+ */
 import { Fragment, useRef, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import Check from "../../components/Icons/Check";
+import Check from "@/components/Icons/Check";
 
 export default function Example() {
   const [open, setOpen] = useState(true);

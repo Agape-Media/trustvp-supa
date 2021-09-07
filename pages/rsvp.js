@@ -1,58 +1,45 @@
-import Layout from "../components/Layout";
 import React, { useState, useEffect } from "react";
+import Layout from "@/components/Layout";
 import Link from "next/link";
-import { supabase } from "../utils/supabaseClient";
-import {
-  Empty,
-  Table,
-  Skeleton,
-  Menu,
-  Dropdown,
-  notification,
-  Tabs,
-} from "antd";
-import { TrustButton } from "../components/pageUtils";
-import Published from "../components/RSVP/Published";
-import Drafts from "../components/RSVP/Drafts";
-import DeleteEventModal from "../components/RSVP/DeleteEventModal";
-
-import { catchErrors, baseURL } from "../utils/helper";
-import moment from "moment";
+import { supabase } from "@/utils/supabaseClient";
+import { notification } from "antd";
+import { TrustButton, Spinner, Panel } from "@/components/pageUtils";
+import Published from "@/components/RSVP/Published";
+import Drafts from "@/components/RSVP/Drafts";
+import DeleteEventModal from "@/components/RSVP/DeleteEventModal";
+import useSWR from "swr";
 import _ from "lodash";
 import { useRouter } from "next/router";
+import { fetcher } from "@/utils/helper";
+import Header from "@/components/Header";
+import TableLoadingShell from "@/components/TableLoadingShell";
+import { useAppContext } from "@/context/state";
 
 export default function RSVP() {
+  const view = useAppContext();
   const router = useRouter();
 
   const [publishedEvents, setPublishedEvents] = useState(null);
   const [drafts, setDrafts] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingStripe, setLoadingStripe] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
+
+  const user = supabase.auth.user();
+
+  const events = useSWR(
+    user ? `/api/getEvents?key=user_id&value=${user?.id}` : null,
+    fetcher
+  );
+  const account = useSWR(
+    view?.stripeID ? `/api/getStripeAccount?id=${view.stripeID}` : null,
+    fetcher
+  );
+
   useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-
-      const user = supabase.auth.user();
-
-      let { data, error, status } = await supabase
-        .from("events")
-        .select(
-          `
-        *,
-        locations:location (name)
-       `
-        )
-        .eq("user_id", user.id);
-
-      setPublishedEvents(_.filter(data, { isDraft: !true }));
-      setDrafts(_.filter(data, { isDraft: true }));
-
-      setLoading(false);
-    };
-
-    catchErrors(fetchEvents());
-  }, []);
+    setPublishedEvents(_.filter(events.data, { isDraft: !true }));
+    setDrafts(_.filter(events.data, { isDraft: true }));
+  }, [events]);
 
   const handleCancel = () => {
     setDeleteModalVisible(false);
@@ -100,15 +87,94 @@ export default function RSVP() {
     }
   };
 
-  return (
-    <Layout>
-      <>
-        <div>
+  const getLink = async () => {
+    setLoadingStripe(true);
+    const response = await fetch(
+      view?.stripeID
+        ? `/api/stripeUpdate?accountID=${view?.stripeID}`
+        : `/api/onboard?email=${sessionData?.user?.email}`
+    );
+    if (!response.ok) {
+      const message = `An error has occured ${
+        view?.stripeID ? "retrieving your account" : "onboarding your account"
+      }. Contact support if error persists`;
+
+      notification["error"]({
+        message: "Error",
+        description: message,
+      });
+      throw new Error(message);
+    }
+    const { url } = await response.json();
+    router.push(url);
+  };
+
+  const OnboardMessage = () => (
+    <p>
+      Please onboard with stripe by going to settings then the account tab.{" "}
+      <span onClick={() => getLink()}>Or click here</span>
+    </p>
+  );
+
+  if (loadingStripe) {
+    <Spinner />;
+  }
+
+  if (!events.data || !account.data) {
+    return (
+      <Layout>
+        <Header title="Manage RSVP's" subtitle="RSVPS" />
+        <TableLoadingShell
+          labels={["Name", "Location", "Date", "Description"]}
+        />
+      </Layout>
+    );
+  }
+
+  if (!account?.data?.charges_enabled) {
+    return (
+      <Layout>
+        <Header title="Manage RSVP's" subtitle="RSVPS" />
+        <Panel>
+          <p className="text-trustDark text-2xl font-medium">
+            Your account cant be charged
+          </p>
+          <p className="text-trustDark text-base ">charge</p>
+          <OnboardMessage />
+        </Panel>
+      </Layout>
+    );
+  }
+
+  if (!drafts?.length && !publishedEvents?.length) {
+    return (
+      <Layout>
+        <Header title="Manage RSVP's" subtitle="RSVPS" />
+        <Panel>
+          <p className="text-trustDark text-2xl font-medium">
+            You currently have no events
+          </p>
+          <p className="text-trustDark text-base ">
+            Create an event to get started
+          </p>
           <Link href="/newEvent" passHref>
             <TrustButton label="Create Event" buttonClass="bg-trustBlue" />
           </Link>
-        </div>
-        {drafts?.length || publishedEvents?.length ? (
+        </Panel>
+      </Layout>
+    );
+  }
+
+  return (
+    <>
+      <Layout>
+        <>
+          <Header title="Manage RSVP's" subtitle="RSVPS" />
+          <div className="px-4 pb-4">
+            <Link href="/newEvent" passHref>
+              <TrustButton label="Create Event" buttonClass="bg-trustBlue" />
+            </Link>
+          </div>
           <>
             <DeleteEventModal
               visible={isDeleteModalVisible}
@@ -116,35 +182,25 @@ export default function RSVP() {
               deleteEvent={deleteEvent}
               data={selectedEvent}
             />
-            <Drafts
-              setSelectedEvent={setSelectedEvent}
-              setDeleteModalVisible={setDeleteModalVisible}
-              events={drafts}
-            />
-            <Published
-              setSelectedEvent={setSelectedEvent}
-              selectedEvent={selectedEvent}
-              setDeleteModalVisible={setDeleteModalVisible}
-              events={publishedEvents}
-            />{" "}
+
+            {drafts.length ? (
+              <Drafts
+                setSelectedEvent={setSelectedEvent}
+                setDeleteModalVisible={setDeleteModalVisible}
+                events={drafts}
+              />
+            ) : null}
+            {publishedEvents.length ? (
+              <Published
+                setSelectedEvent={setSelectedEvent}
+                selectedEvent={selectedEvent}
+                setDeleteModalVisible={setDeleteModalVisible}
+                events={publishedEvents}
+              />
+            ) : null}
           </>
-        ) : (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            imageStyle={{
-              height: 60,
-            }}
-            description={
-              <span>
-                You currently have no events.{" "}
-                <Link href="/newEvent">
-                  <button>Create an event.</button>
-                </Link>
-              </span>
-            }
-          />
-        )}
-      </>
-    </Layout>
+        </>
+      </Layout>
+    </>
   );
 }

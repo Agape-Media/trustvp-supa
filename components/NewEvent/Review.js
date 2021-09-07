@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { TrustButton } from "../pageUtils";
 import _ from "lodash";
 import moment from "moment";
-import { supabase } from "../../utils/supabaseClient";
+import { supabase } from "@/utils/supabaseClient";
 import { useRouter } from "next/router";
 
 export default function Review({ newEventForm, locations }) {

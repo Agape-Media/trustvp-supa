@@ -3,35 +3,38 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import { useRouter } from "next/router";
 import { Auth } from "@supabase/ui";
-import { notification } from "antd";
+import { Input, notification, Skeleton } from "antd";
 import { TrustButton } from "@/components/pageUtils";
 import _ from "lodash";
-import AvatarUpload from "@/components/Avatar";
-import { Avatar } from "antd";
-import { AiOutlineUser } from "react-icons/ai";
-import { useAppContext, useAppUpdateContext } from "@/context/state";
-import { FaInfinity } from "react-icons/fa";
+import useSWR from "swr";
+import { fetcher } from "@/utils/helper";
+import Avatar from "@/components/Avatar";
 
 export default function Settings() {
-  const view = useAppContext();
-  const update = useAppUpdateContext();
-
   const { user, session } = Auth.useUser();
+  const { data, error } = useSWR(
+    user ? `/api/getProfile?id=${user.id}` : null,
+    fetcher
+  );
 
   const router = useRouter();
 
+  const [hasStripeAccount, setHasStripeAccount] = useState(null);
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState(null);
   const [website, setWebsite] = useState(null);
+  const [avatar_url, setAvatarUrl] = useState(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
 
   const [formData, setFormData] = useState();
 
   useEffect(() => {
-    setFormData(view);
-    setUsername(view?.username);
-    setWebsite(view?.website);
-  }, [view]);
+    setFormData(data);
+    data?.stripeID ? setHasStripeAccount(true) : setHasStripeAccount(false);
+    setUsername(data?.username);
+    setWebsite(data?.website);
+    setAvatarUrl(data?.avatar_url);
+  }, [data]);
 
   async function updateProfile(values) {
     try {
@@ -48,7 +51,7 @@ export default function Settings() {
       };
 
       let { error, data } = await supabase.from("profiles").upsert(updates);
-
+      console.log(data);
       if (data) {
         notification["success"]({
           message: "Profile Updated Successfully",
@@ -76,15 +79,13 @@ export default function Settings() {
 
   const getLink = async () => {
     const response = await fetch(
-      formData?.stripeID
+      hasStripeAccount
         ? `/api/stripeUpdate?accountID=${formData?.stripeID}`
         : `/api/onboard?email=${session?.user?.email}`
     );
     if (!response.ok) {
       const message = `An error has occured ${
-        formData?.stripeID
-          ? "retrieving your account"
-          : "onboarding your account"
+        hasStripeAccount ? "retrieving your account" : "onboarding your account"
       }. Contact support if error persists`;
 
       notification["error"]({
@@ -100,24 +101,15 @@ export default function Settings() {
   return (
     <Layout>
       <div className="px-4 mb-6">
-        {user ? (
-          <div className="form-widget mb-3">
-            <AvatarUpload
-              url={view?.avatar_url}
-              onUpload={(url) => {
-                updateProfile({ username, website, avatar_url: url });
-              }}
-            />
-          </div>
-        ) : (
-          <div className="flex sm:justify-center">
-            <Avatar
-              size={96}
-              className="grid place-items-center"
-              icon={<AiOutlineUser />}
-            />
-          </div>
-        )}
+        <div className="form-widget mb-3">
+          <Avatar
+            url={avatar_url}
+            onUpload={(url) => {
+              setAvatarUrl(url);
+              updateProfile({ username, website, avatar_url: url });
+            }}
+          />
+        </div>
         <p className="text-left sm:text-center font-bold text-3xl mb-0.5">
           {username}
         </p>
@@ -125,18 +117,56 @@ export default function Settings() {
           {session?.user?.email}
         </p>
       </div>
+      <div>
+        <div className="mb-6">
+          <a onClick={() => getLink()} className="stripe-connect">
+            <span>Connect with</span>
+          </a>
+        </div>
+        {formData?.id && !loading ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+              <div className="col-span-1">
+                <Input
+                  id="username"
+                  type="text"
+                  value={username || ""}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+            </div>
 
-      <div className="max-w-[650px] mx-auto w-full px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+              <div className="col-span-1">
+                <Input
+                  id="website"
+                  type="website"
+                  value={website || ""}
+                  onChange={(e) => setWebsite(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <TrustButton
+              disabled={buttonDisabled}
+              onClick={() => updateProfile({ username, website, avatar_url })}
+              label={buttonDisabled ? "Updating" : "Update"}
+              buttonClass={`bg-trustBlue mx-auto w-80 h-12 mt-12 ${
+                buttonDisabled ? "opacity-75" : null
+              }`}
+            />
+          </>
+        ) : (
+          <Skeleton active />
+        )}
+      </div>
+
+      <div className="max-w-xl mx-auto w-full px-6">
         <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg mt-12 ">
-          <div className="px-6 bg-[#F7FAFC] py-5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <div className="px-6 bg-gray-50 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             Settings
           </div>
-          <div className="px-6 py-6 bg-white ">
-            <div className="flex items-center justify-between mb-6">
-              <Stats title="Events" info="Unlimited Events" />
-              <Stats title="Locations" info="Unlimited Locations" />
-              <div></div>
-            </div>
+          <div className="px-6 py-4 bg-white ">
             <p className="text-base mb-8">
               Trustvp uses Stripe to update, change, or cancel your account. You
               can also update card information and billing addresses through the
@@ -144,10 +174,7 @@ export default function Settings() {
             </p>
             <div className="flex items-center justify-end space-x-6">
               <p
-                onClick={() => {
-                  update(null);
-                  supabase.auth.signOut();
-                }}
+                onClick={() => supabase.auth.signOut()}
                 className="text-base cursor-pointer"
               >
                 Log Out
@@ -165,11 +192,3 @@ export default function Settings() {
     </Layout>
   );
 }
-
-const Stats = ({ title, info }) => (
-  <div className="flex flex-col space-y-2">
-    <p className="font-medium">{title}</p>
-    <FaInfinity className="text-xl" />
-    <p className="text-gray-500">{info}</p>
-  </div>
-);

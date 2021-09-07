@@ -1,6 +1,4 @@
 import React, { forwardRef } from "react";
-import { Spin } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
 
 export const TrustButton = forwardRef(
   ({ onClick, href, label, buttonClass, disabled, form }, ref) => {
@@ -19,6 +17,18 @@ export const TrustButton = forwardRef(
   }
 );
 
-const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
+export const Panel = ({ children }) => (
+  <div className="w-full bg-white rounded-2xl px-8 py-16">
+    <div className="grid place-items-center space-y-2">{children}</div>
+  </div>
+);
 
 export const Card = ({ children }) => <div>{children}</div>;
+
+export const Spinner = () => {
+  return (
+    <div className="grid h-screen place-items-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-400" />
+    </div>
+  );
+};

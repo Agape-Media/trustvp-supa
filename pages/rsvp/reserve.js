@@ -1,49 +1,27 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
-import { supabase } from "../../utils/supabaseClient";
+import { supabase } from "@/utils/supabaseClient";
 import _ from "lodash";
 import { Skeleton } from "antd";
 import moment from "moment";
 import { Divider } from "antd";
-import SlotInfoModal from "../../components/Reserve/SlotInfoModal";
+import SlotInfoModal from "@/components/Reserve/SlotInfoModal";
+import useSWR from "swr";
+import { fetcher } from "@/utils/helper";
 
 export default function Event() {
   const router = useRouter();
+  const queryKey = "id";
+  const paramToken =
+    router.query[queryKey] ||
+    (router.asPath.match(new RegExp(`[&?]${queryKey}=(.*)(&|$)`))
+      ? router.asPath.match(new RegExp(`[&?]${queryKey}=(.*)(&|$)`))[1]
+      : null);
 
-  const [event, setEvent] = useState(null);
+  const { data } = useSWR(`/api/getEvents?key=id&value=${paramToken}`, fetcher);
+
   const [activeSlot, setActiveSlot] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  useEffect(() => {
-    const fetchEvent = async () => {
-      try {
-        let { data, error, status } = await supabase
-          .from("events")
-          .select(
-            ` 
-          *,
-        locations:location (name)
-        `
-          )
-          .eq("id", router.query.id)
-          .single();
-
-        if (error && status !== 406) {
-          throw error;
-        }
-
-        if (data) {
-          setEvent(data);
-          console.log(data);
-        }
-      } catch (error) {
-        alert(error.message);
-        console.log(error);
-      } finally {
-      }
-    };
-
-    fetchEvent();
-  }, []);
 
   const Slot = ({ startTime, endTime, available, id }) => (
     <div
@@ -60,13 +38,13 @@ export default function Event() {
 
   const SlotContainer = ({ date }) => (
     <>
-      {event?.eventSlots[date].length ? (
+      {data?.eventSlots[date].length ? (
         <div className="">
           <p className="text-base font-bold">
             {moment(date).format("D MMM, YYYY")}
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-2 max-w-lg">
-            {event?.eventSlots[date].map((timeSlot, i) => (
+            {data?.eventSlots[date].map((timeSlot, i) => (
               <Slot
                 key={i}
                 id={timeSlot.id}
@@ -111,33 +89,33 @@ export default function Event() {
 
   return (
     <Layout>
-      {event ? (
+      {data ? (
         <>
-          <Card className="space-y-6 mx-auto bg-[#f0f2f8] p-4 rounded-lg">
+          <Card className="space-y-6 mx-auto bg-[#EDF2F7] p-4 rounded-lg">
             <div className="flex-1">
-              <p className="text-gray-600 text-base">{event?.locations.name}</p>
-              <p className="text-black text-3xl font-bold">{event?.name}</p>
-              <EventInfo info={event?.description} />
+              <p className="text-gray-600 text-base">{data?.locations.name}</p>
+              <p className="text-black text-3xl font-bold">{data?.name}</p>
+              <EventInfo info={data?.description} />
               <Divider />
               <EventInfo
-                info={`Date Start: ${moment(event?.dateRange[0]).format(
+                info={`Date Start: ${moment(data?.dateRange[0]).format(
                   "D MMM, YYYY"
                 )}`}
               />
               <EventInfo
-                info={`Date End: ${moment(event?.dateRange[1]).format(
+                info={`Date End: ${moment(data?.dateRange[1]).format(
                   "D MMM, YYYY"
                 )}`}
               />
-              <EventInfo info={`Time Zone: ${event?.timeZone}`} />
+              <EventInfo info={`Time Zone: ${data?.timeZone}`} />
               <Divider />
             </div>
-            {Object.keys(event?.eventSlots).map((date, i) => (
+            {Object.keys(data?.eventSlots).map((date, i) => (
               <SlotContainer date={date} key={i} />
             ))}
           </Card>
           <SlotInfoModal
-            event={_.omit(event, "eventSlots")}
+            event={_.omit(data, "eventSlots")}
             activeSlot={activeSlot}
             title="Basic Modal"
             visible={isModalVisible}
@@ -151,11 +129,11 @@ export default function Event() {
   );
 }
 
-export async function getServerSideProps(context) {
-  return {
-    props: {}, // ONLY TO KEEP QUERY ON REFRESH ----- DO NOT DELETE
-  };
-}
+// export async function getServerSideProps(context) {
+//   return {
+//     props: {}, // ONLY TO KEEP QUERY ON REFRESH ----- DO NOT DELETE
+//   };
+// }
 
 const Layout = ({ children }) => (
   <div className="bg-trustBlue flex flex-col px-4 sm:px-6 lg:px-8 pt-4 md:pt-12 lg:pt-16 pb-32 w-full max-w-9xl">
@@ -164,7 +142,7 @@ const Layout = ({ children }) => (
 );
 
 const Card = ({ children }) => (
-  <div className="space-y-6 mx-auto bg-[#f0f2f8] p-4 rounded-lg">
+  <div className="space-y-6 mx-auto bg-[#EDF2F7] p-4 rounded-lg">
     {children}
   </div>
 );

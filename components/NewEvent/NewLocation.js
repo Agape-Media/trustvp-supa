@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { states } from "../../utils/selections";
+import { states } from "@/utils/selections";
 import { TrustButton } from "../pageUtils";
 
 import { Form, Modal, Input, Select, AutoComplete } from "antd";
@@ -12,6 +12,7 @@ export default function NewLocationModal({
   newLocationSubmit,
   data,
 }) {
+  console.log(data);
   return (
     <>
       <Modal

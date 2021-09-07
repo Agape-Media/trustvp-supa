@@ -1,4 +1,4 @@
-import { baseURL } from "../../utils/helper";
+import { baseURL } from "@/utils/helper";
 import Stripe from "stripe";
 const secret = process.env.NEXT_PUBLIC_STRIPE_SECRET;
 console.log(secret);

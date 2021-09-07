@@ -129,7 +129,6 @@ const AutoNewEvent = ({ newEventForm, goToNext, saveAsDraft, savingDraft }) => {
   };
 
   const draft = (data) => {
-    console.log(data);
     saveAsDraft({
       autoInfo: data,
     });
@@ -241,9 +240,6 @@ const AutoNewEvent = ({ newEventForm, goToNext, saveAsDraft, savingDraft }) => {
               disabled={savingDraft}
               onClick={(e) => {
                 e.preventDefault();
-                console.log(
-                  _.compact(_.flatMap(optionInfoForm.getFieldsValue())).length
-                );
                 draft(optionInfoForm.getFieldsValue());
               }}
               label="Save as Draft"
@@ -274,9 +270,6 @@ const AutoNewEvent = ({ newEventForm, goToNext, saveAsDraft, savingDraft }) => {
               disabled={savingDraft}
               onClick={(e) => {
                 e.preventDefault();
-                console.log(
-                  _.compact(_.flatMap(optionInfoForm.getFieldsValue())).length
-                );
                 draft(optionInfoForm.getFieldsValue());
               }}
               label="Save as Draft"

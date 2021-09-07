@@ -1,24 +1,11 @@
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { supabase } from "../../utils/supabaseClient";
-import { TrustButton } from "../pageUtils";
-import {
-  Empty,
-  Table,
-  Skeleton,
-  Menu,
-  Dropdown,
-  notification,
-  Tabs,
-} from "antd";
+import { Menu, Dropdown, notification } from "antd";
 import moment from "moment";
 import _ from "lodash";
 import { useRouter } from "next/router";
 import copy from "copy-to-clipboard";
 import TinyURL from "tinyurl";
 import DotsVertical from "../Icons/DotsVertical";
-import { catchErrors, baseURL } from "../../utils/helper";
-import Trash from "../Icons/Trash";
+import { baseURL } from "@/utils/helper";
 
 export default function Published({
   events,
@@ -27,7 +14,6 @@ export default function Published({
   setDeleteModalVisible,
 }) {
   const router = useRouter();
-
   const menu = (
     <Menu
       onClick={(e) => {
@@ -60,10 +46,7 @@ export default function Published({
           setDeleteModalVisible(true);
         }}
       >
-        <div className="flex space-x-2 items-center">
-          {/* <Trash className="hover:bg-gray-100 rounded hover:border border-gray-200 text-red-600" /> */}
-          Delete Event{" "}
-        </div>
+        <div className="flex space-x-2 items-center">Delete Event </div>
       </Menu.Item>
     </Menu>
   );
@@ -84,27 +67,15 @@ export default function Published({
       });
     }
   };
-
-  const columns = [
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      render: (text) => <span>{text}</span>,
-    },
-    {
-      title: "Location",
-      dataIndex: "locations",
-      key: "location",
-      render: (text) => <span>{text?.name}</span>,
-    },
-    {
-      title: "Date",
-      dataIndex: "dateRange",
-      key: "dateRange",
-      render: (dateRange) => (
+  const data = {
+    labels: ["Name", "Location", "Date", "Description"],
+    data: events.map((item, index) => ({
+      key: index,
+      name: <span>{item.name}</span>,
+      location: <span>{item.locations.name}</span>,
+      dateRange: (
         <div>
-          {dateRange?.map((date, i) => (
+          {item.dateRange?.map((date, i) => (
             <span key={i}>
               {i === 1 ? " - " : null}
               {moment(date).format("MM/DD/YYYY")}
@@ -112,53 +83,84 @@ export default function Published({
           ))}
         </div>
       ),
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-      render: (text) => <span>{text}</span>,
-    },
-    {
-      key: "action",
-      render: (text, record) => (
-        <div className="flex justify-center">
+      description: <span>{item.description}</span>,
+      action: (
+        <div className="flex justify-end">
           <Dropdown overlay={menu} placement="bottomRight" trigger={["click"]}>
             <DotsVertical
               className="hover:bg-gray-100 rounded hover:border border-gray-200"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setSelectedEvent(record);
+                setSelectedEvent(item);
               }}
             />
           </Dropdown>
         </div>
       ),
-    },
-  ];
+    })),
+  };
 
   return (
-    <>
-      {events != null ? (
-        events?.length ? (
-          <Table
-            rowKey="id"
-            rowClassName="cursor-pointer"
-            onRow={(record, rowIndex) => {
-              return {
-                onClick: () => router.push(`/eventInfo?id=${record.id}`),
-              };
-            }}
-            className="mt-12"
-            bordered
-            columns={columns}
-            dataSource={events}
-          />
-        ) : null
-      ) : (
-        <Skeleton />
-      )}
-    </>
+    <div className="flex flex-col">
+      <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+          <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+            <table className="min-w-full divide-y divide-gray-200 bg-[#F7FAFC]">
+              <thead className="bg-[#F7FAFC] min-w-full">
+                <tr>
+                  {data.labels.map((item, index) => (
+                    <th
+                      key={index}
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      {item}
+                    </th>
+                  ))}
+                  <th scope="col" className="relative px-6 py-3">
+                    <span className="sr-only">Edit</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.data.map((item, i) => (
+                  <tr className="cursor-pointer hover:bg-[#F7FAFC]" key={i}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="text-sm font-medium text-gray-900">
+                          {item.name}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {item.location}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {item.dateRange}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.description}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <a
+                        href="#"
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        {item.action}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

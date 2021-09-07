@@ -1,4 +1,4 @@
-import { baseURL } from "../../utils/helper";
+import { baseURL } from "@/utils/helper";
 import Stripe from "stripe";
 
 export default async (req, res) => {

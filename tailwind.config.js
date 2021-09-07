@@ -6,6 +6,7 @@ module.exports = {
     extend: {
       colors: {
         trustBlue: "#10182F",
+        trustDark: "#1A202C",
       },
     },
   },
