@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { useAppContext } from "@/context/state";
+import Logo from "/public/logo.svg";
+
 const navItems = [
   {
     id: "0",
@@ -23,6 +25,7 @@ function Header() {
         {/* Header: Left side */}
         <div className="flex items-center space-x-4 sm:space-x-6">
           {/* Logo */}
+          {/* {Logo} */}
           <Link exact href="/">
             <div className="w-7 h-7 mr-2 rounded-full bg-trustBlue cursor-pointer" />
           </Link>

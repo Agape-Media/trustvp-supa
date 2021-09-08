@@ -61,7 +61,7 @@ export default function Home() {
           <>
             <Typography.Text>You're signed in</Typography.Text>
             <Typography.Text strong>Email: {user.email}</Typography.Text>
-            <Button
+            {/* <Button
               icon={<Icon type="LogOut" />}
               type="outline"
               onClick={() => supabase.auth.signOut()}
@@ -82,7 +82,7 @@ export default function Home() {
               <Link href="/profile">
                 <a>SSR example with getServerSideProps</a>
               </Link>
-            </Typography.Text>
+            </Typography.Text> */}
           </>
         )}
       </Space>
